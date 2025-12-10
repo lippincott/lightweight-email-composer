@@ -1,0 +1,444 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Email Composer</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 28px;
+            margin-bottom: 8px;
+        }
+
+        .header p {
+            opacity: 0.9;
+            font-size: 14px;
+        }
+
+        .content {
+            padding: 30px;
+        }
+
+        .section {
+            margin-bottom: 25px;
+        }
+
+        .section-title {
+            font-size: 16px;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .section-title::before {
+            content: '';
+            width: 4px;
+            height: 20px;
+            background: #667eea;
+            border-radius: 2px;
+        }
+
+        input[type="text"], input[type="email"], textarea {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 6px;
+            font-size: 14px;
+            font-family: inherit;
+            transition: border-color 0.3s;
+        }
+
+        input[type="text"]:focus, input[type="email"]:focus, textarea:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        textarea {
+            resize: vertical;
+            min-height: 150px;
+        }
+
+        .help-text {
+            font-size: 12px;
+            color: #666;
+            margin-top: 4px;
+        }
+
+        .form-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-bottom: 15px;
+        }
+
+        .form-row {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .form-row label {
+            font-size: 13px;
+            font-weight: 500;
+            color: #555;
+            margin-bottom: 6px;
+        }
+
+        .form-row input {
+            padding: 10px;
+            border: 2px solid #e0e0e0;
+            border-radius: 6px;
+            font-size: 14px;
+        }
+
+        .add-row-btn {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: background 0.3s;
+        }
+
+        .add-row-btn:hover {
+            background: #5568d3;
+        }
+
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+            font-size: 14px;
+        }
+
+        .data-table th {
+            background: #f5f5f5;
+            padding: 12px;
+            text-align: left;
+            font-weight: 600;
+            border-bottom: 2px solid #e0e0e0;
+        }
+
+        .data-table td {
+            padding: 10px 12px;
+            border-bottom: 1px solid #e0e0e0;
+        }
+
+        .data-table tr:hover {
+            background: #f9f9f9;
+        }
+
+        .delete-btn {
+            background: #ef4444;
+            color: white;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 12px;
+        }
+
+        .delete-btn:hover {
+            background: #dc2626;
+        }
+
+        .button-group {
+            display: flex;
+            gap: 12px;
+            margin-top: 30px;
+        }
+
+        .btn {
+            flex: 1;
+            padding: 14px;
+            border: none;
+            border-radius: 6px;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-secondary {
+            background: #f3f4f6;
+            color: #333;
+        }
+
+        .btn-secondary:hover {
+            background: #e5e7eb;
+        }
+
+        .success-message {
+            background: #10b981;
+            color: white;
+            padding: 15px;
+            border-radius: 6px;
+            margin-top: 20px;
+            display: none;
+            animation: slideIn 0.3s;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 40px;
+            color: #999;
+        }
+
+        @media (max-width: 768px) {
+            .form-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>✉️ Email Composer</h1>
+            <p>Create formatted emails with dynamic Excel attachments</p>
+        </div>
+
+        <div class="content">
+            <div class="section">
+                <div class="section-title">Email Recipients</div>
+                <div style="margin-bottom: 15px;">
+                    <input type="email" id="toEmails" placeholder="recipient1@example.com, recipient2@example.com">
+                    <div class="help-text">Separate multiple email addresses with commas</div>
+                </div>
+                <div>
+                    <input type="email" id="ccEmails" placeholder="cc1@example.com, cc2@example.com">
+                    <div class="help-text">CC recipients (optional)</div>
+                </div>
+            </div>
+
+            <div class="section">
+                <div class="section-title">Email Content</div>
+                <div style="margin-bottom: 15px;">
+                    <input type="text" id="subject" placeholder="Enter email subject">
+                </div>
+                <textarea id="body" placeholder="Enter your email message here..."></textarea>
+            </div>
+
+            <div class="section">
+                <div class="section-title">Attachment Data</div>
+                <div class="form-grid">
+                    <div class="form-row">
+                        <label>Name</label>
+                        <input type="text" id="inputName">
+                    </div>
+                    <div class="form-row">
+                        <label>Email</label>
+                        <input type="email" id="inputEmail">
+                    </div>
+                    <div class="form-row">
+                        <label>Product</label>
+                        <input type="text" id="inputProduct">
+                    </div>
+                    <div class="form-row">
+                        <label>Quantity</label>
+                        <input type="text" id="inputQuantity">
+                    </div>
+                </div>
+                <button class="add-row-btn" onclick="addRow()">+ Add Row</button>
+
+                <div id="tableContainer" style="margin-top: 20px;">
+                    <div class="empty-state">No data added yet. Add rows above to create your attachment.</div>
+                </div>
+            </div>
+
+            <div class="button-group">
+                <button class="btn btn-secondary" onclick="clearAll()">Clear All</button>
+                <button class="btn btn-primary" onclick="generateEmail()">Generate Email with Attachment</button>
+            </div>
+
+            <div class="success-message" id="successMessage">
+                Email generated successfully! Your default email client should open with the message and attachment.
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let data = [];
+
+        function addRow() {
+            const name = document.getElementById('inputName').value.trim();
+            const email = document.getElementById('inputEmail').value.trim();
+            const product = document.getElementById('inputProduct').value.trim();
+            const quantity = document.getElementById('inputQuantity').value.trim();
+
+            if (!name && !email && !product && !quantity) {
+                alert('Please enter at least one field');
+                return;
+            }
+
+            data.push({ name, email, product, quantity });
+            
+            document.getElementById('inputName').value = '';
+            document.getElementById('inputEmail').value = '';
+            document.getElementById('inputProduct').value = '';
+            document.getElementById('inputQuantity').value = '';
+
+            renderTable();
+        }
+
+        function deleteRow(index) {
+            data.splice(index, 1);
+            renderTable();
+        }
+
+        function renderTable() {
+            const container = document.getElementById('tableContainer');
+            
+            if (data.length === 0) {
+                container.innerHTML = '<div class="empty-state">No data added yet. Add rows above to create your attachment.</div>';
+                return;
+            }
+
+            let html = '<table class="data-table"><thead><tr>';
+            html += '<th>Name</th><th>Email</th><th>Product</th><th>Quantity</th><th>Action</th>';
+            html += '</tr></thead><tbody>';
+
+            data.forEach((row, index) => {
+                html += `<tr>
+                    <td>${row.name || '-'}</td>
+                    <td>${row.email || '-'}</td>
+                    <td>${row.product || '-'}</td>
+                    <td>${row.quantity || '-'}</td>
+                    <td><button class="delete-btn" onclick="deleteRow(${index})">Delete</button></td>
+                </tr>`;
+            });
+
+            html += '</tbody></table>';
+            container.innerHTML = html;
+        }
+
+        function clearAll() {
+            if (confirm('Clear all data?')) {
+                data = [];
+                document.getElementById('toEmails').value = '';
+                document.getElementById('ccEmails').value = '';
+                document.getElementById('subject').value = '';
+                document.getElementById('body').value = '';
+                renderTable();
+            }
+        }
+
+        function generateEmail() {
+            const to = document.getElementById('toEmails').value.trim();
+            const cc = document.getElementById('ccEmails').value.trim();
+            const subject = document.getElementById('subject').value.trim();
+            const body = document.getElementById('body').value.trim();
+
+            if (!to) {
+                alert('Please enter at least one recipient email');
+                return;
+            }
+
+            if (!subject) {
+                alert('Please enter an email subject');
+                return;
+            }
+
+            let mailtoLink = `mailto:${to}?subject=${encodeURIComponent(subject)}`;
+            
+            if (cc) {
+                mailtoLink += `&cc=${encodeURIComponent(cc)}`;
+            }
+
+            let emailBody = body;
+            
+            if (data.length > 0) {
+                const wb = XLSX.utils.book_new();
+                const ws = XLSX.utils.json_to_sheet(data);
+                XLSX.utils.book_append_sheet(wb, ws, 'Data');
+                
+                const wbout = XLSX.write(wb, { bookType: 'xlsx', type: 'base64' });
+                
+                emailBody += '\n\n[Note: Excel attachment with ' + data.length + ' rows will be generated. Please download the attachment separately from this tool or use your email client\'s attachment feature.]';
+                
+                const blob = new Blob([s2ab(atob(wbout))], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = 'attachment.xlsx';
+                a.click();
+                URL.revokeObjectURL(url);
+            }
+
+            mailtoLink += `&body=${encodeURIComponent(emailBody)}`;
+            
+            window.location.href = mailtoLink;
+            
+            const successMsg = document.getElementById('successMessage');
+            successMsg.style.display = 'block';
+            setTimeout(() => {
+                successMsg.style.display = 'none';
+            }, 5000);
+        }
+
+        function s2ab(s) {
+            const buf = new ArrayBuffer(s.length);
+            const view = new Uint8Array(buf);
+            for (let i = 0; i < s.length; i++) {
+                view[i] = s.charCodeAt(i) & 0xFF;
+            }
+            return buf;
+        }
+    </script>
+</body>
+</html>
