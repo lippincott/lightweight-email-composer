@@ -312,7 +312,7 @@
         </div>
     </div>
 
-    <script>
+<script>
         let data = [];
 
         function addRow() {
@@ -394,6 +394,7 @@
                 return;
             }
 
+            // 1. Construct the basic link
             let mailtoLink = `mailto:${to}?subject=${encodeURIComponent(subject)}`;
             
             if (cc) {
@@ -402,6 +403,7 @@
 
             let emailBody = body;
             
+            // 2. Handle the Excel File Generation (Download)
             if (data.length > 0) {
                 const wb = XLSX.utils.book_new();
                 const ws = XLSX.utils.json_to_sheet(data);
@@ -409,26 +411,35 @@
                 
                 const wbout = XLSX.write(wb, { bookType: 'xlsx', type: 'base64' });
                 
-                emailBody += '\n\n[Note: Excel attachment with ' + data.length + ' rows will be generated. Please download the attachment separately from this tool or use your email client\'s attachment feature.]';
+                emailBody += '\n\n[ACTION REQUIRED: An Excel file named "attachment.xlsx" has been downloaded to your computer. Please drag and drop it into this email.]';
                 
                 const blob = new Blob([s2ab(atob(wbout))], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
                 const url = URL.createObjectURL(blob);
                 const a = document.createElement('a');
                 a.href = url;
                 a.download = 'attachment.xlsx';
+                
+                // Trigger the download immediately
+                document.body.appendChild(a);
                 a.click();
+                document.body.removeChild(a);
                 URL.revokeObjectURL(url);
             }
 
+            // 3. Finalize the email body
             mailtoLink += `&body=${encodeURIComponent(emailBody)}`;
             
-            window.location.href = mailtoLink;
-            
+            // 4. Show success message
             const successMsg = document.getElementById('successMessage');
             successMsg.style.display = 'block';
             setTimeout(() => {
                 successMsg.style.display = 'none';
             }, 5000);
+
+            // 5. Wait 1 second (to allow download to start), THEN open email
+            setTimeout(() => {
+                window.location.href = mailtoLink;
+            }, 1000);
         }
 
         function s2ab(s) {
